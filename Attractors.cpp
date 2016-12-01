@@ -196,19 +196,19 @@ std::vector<BDD> attractors(Cudd manager, BDD transitionBdd, int numVars) {
 
 int main() {
     //Cebpa, Pu.1, Gata2, Gata1, Fog1, EKLF, Fli1, Scl, cJun, EgrNab, Gfi1
-    std::vector<bool> cmpInitial = { true, true, true, false, false, false, false, false, false, false, false };
-    std::vector<std::vector<int>> cebpa = { { 0 },{ -7 },{ -3, -4 } };
-    std::vector<std::vector<int>> pu1 = { { 0, 1 },{ -2 },{ -3 } };
-    std::vector<std::vector<int>> gata2 = { { 3 },{ -1 },{ -3, -4 } };
-    std::vector<std::vector<int>> gata1 = { { 2, 3, 6 },{ -1 } };
-    std::vector<std::vector<int>> fog1 = { { 3 } };
-    std::vector<std::vector<int>> eklf = { { 3 },{ -6 } };
-    std::vector<std::vector<int>> fli1 = { { 3 },{ -5 } };
-    std::vector<std::vector<int>> scl = { { 3 },{ -1 } };
-    std::vector<std::vector<int>> cJun = { { 1 },{ -10 } };
-    std::vector<std::vector<int>> egrNab = { { 1 },{ 8 },{ -10 } };
-    std::vector<std::vector<int>> gfi1 = { { 0 },{ -9 } };
-    std::vector<std::vector<std::vector<int>>> cmp = { cebpa, pu1, gata2, gata1, fog1, eklf, fli1, scl, cJun, egrNab, gfi1 };
+    std::vector<bool> cmpInitial { true, true, true, false, false, false, false, false, false, false, false };
+    std::vector<std::vector<int>> cebpa { { 0 },{ -7 },{ -3, -4 } };
+    std::vector<std::vector<int>> pu1 { { 0, 1 },{ -2 },{ -3 } };
+    std::vector<std::vector<int>> gata2 { { 3 },{ -1 },{ -3, -4 } };
+    std::vector<std::vector<int>> gata1 { { 2, 3, 6 },{ -1 } };
+    std::vector<std::vector<int>> fog1 { { 3 } };
+    std::vector<std::vector<int>> eklf { { 3 },{ -6 } };
+    std::vector<std::vector<int>> fli1 { { 3 },{ -5 } };
+    std::vector<std::vector<int>> scl { { 3 },{ -1 } };
+    std::vector<std::vector<int>> cJun { { 1 },{ -10 } };
+    std::vector<std::vector<int>> egrNab { { 1 },{ 8 },{ -10 } };
+    std::vector<std::vector<int>> gfi1 { { 0 },{ -9 } };
+    std::vector<std::vector<std::vector<int>>> cmp { cebpa, pu1, gata2, gata1, fog1, eklf, fli1, scl, cJun, egrNab, gfi1 };
 
     Cudd manager(0, 0);
     BDD initialStateBdd = representState(manager, cmpInitial);
