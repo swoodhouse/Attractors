@@ -1,3 +1,5 @@
+// TODO: add defensive size checks, refactor, optimise
+
 #include "stdafx.h"
 
 BDD representState(const Cudd& manager, const std::vector<bool>& values) {
@@ -35,11 +37,11 @@ BDD representUpdateFunction(const Cudd& manager, const std::vector<std::vector<i
 }
 
 BDD implication(const BDD& a, const BDD& b) {
-    return (!a) + b;
+    return !a + b;
 }
 
 BDD logicalEquivalence(const BDD& a, const BDD& b) {
-    return (a * b) + ((!a) * (!b));
+    return implication(a, b) * implication(b, a);
 }
 
 BDD representSyncTransitionRelation(const Cudd& manager, const std::vector<std::vector<std::vector<int>>>& network) {
@@ -69,7 +71,7 @@ BDD otherVarsDoNotChange(const Cudd& manager, int i, int numVars) {
 
 BDD representAsyncTransitionRelation(const Cudd& manager, const std::vector<std::vector<std::vector<int>>>& network) {
     BDD fixpoint = manager.bddOne();
-    for (int i = 0; i < network.size(); i++) {
+    for (size_t i = 0; i < network.size(); i++) {
         BDD v = manager.bddVar(i);
         BDD vPrime = manager.bddVar(network.size() + i);
         fixpoint = fixpoint * logicalEquivalence(v, vPrime);
@@ -91,53 +93,54 @@ BDD representAsyncTransitionRelation(const Cudd& manager, const std::vector<std:
     return bdd;
 }
 
-BDD renameRemovingPrimes(const BDD& bdd, int numVars) {
-    int *permute = new int[numVars * 2];
-    for (int i = 0; i < numVars; i++) {
+BDD renameRemovingPrimes(const BDD& bdd, int numUnprimedBDDVars) {
+    int *permute = new int[numUnprimedBDDVars * 2];
+    for (int i = 0; i < numUnprimedBDDVars; i++) {
         permute[i] = i;
-        permute[i + numVars] = i;
+        permute[i + numUnprimedBDDVars] = i;
     }
     BDD r = bdd.Permute(permute);
     delete[] permute;
     return r;
 }
 
-BDD nonPrimeVariables(const Cudd& manager, int numVars) {
-    return representState(manager, std::vector<bool>(numVars, true));
+BDD nonPrimeVariables(const Cudd& manager, int numUnprimedBDDVars) {
+    return representState(manager, std::vector<bool>(numUnprimedBDDVars, true));
 }
 
-BDD primeVariables(const Cudd& manager, int numVars) {
+BDD primeVariables(const Cudd& manager, int numUnprimedBDDVars) {
     BDD bdd = manager.bddOne();
-    for (int i = numVars; i < numVars * 2; i++) {
+    for (int i = numUnprimedBDDVars; i < numUnprimedBDDVars * 2; i++) {
         BDD var = manager.bddVar(i);
         bdd = var * bdd;
     }
     return bdd;
 }
 
-BDD immediateSuccessorStates(const Cudd& manager, const BDD& transitionBdd, const BDD& valuesBdd, int numVars) {
+BDD immediateSuccessorStates(const Cudd& manager, const BDD& transitionBdd, const BDD& valuesBdd, int numUnprimedBDDVars) {
     BDD bdd = transitionBdd * valuesBdd;
-    bdd = bdd.ExistAbstract(nonPrimeVariables(manager, numVars));
-    bdd = renameRemovingPrimes(bdd, numVars);
+    bdd = bdd.ExistAbstract(nonPrimeVariables(manager, numUnprimedBDDVars));
+    bdd = renameRemovingPrimes(bdd, numUnprimedBDDVars);
+
     return bdd;
 }
 
-BDD forwardReachableStates(const Cudd& manager, const BDD& transitionBdd, const BDD& valuesBdd, int numVars) {
+BDD forwardReachableStates(const Cudd& manager, const BDD& transitionBdd, const BDD& valuesBdd, int numUnprimedBDDVars) {
     BDD reachable = manager.bddZero();
     BDD frontier = valuesBdd;
 
     while (frontier != manager.bddZero()) {
-        frontier = immediateSuccessorStates(manager, transitionBdd, frontier, numVars) * !reachable;
+        frontier = immediateSuccessorStates(manager, transitionBdd, frontier, numUnprimedBDDVars) * !reachable;
         reachable = reachable + frontier;
     }
     return reachable;
 }
 
-BDD renameAddingPrimes(const BDD& bdd, int numVars) {
-    int *permute = new int[numVars * 2];
-    for (int i = 0; i < numVars; i++) {
-        permute[i] = i + numVars;
-        permute[i + numVars] = i + numVars;
+BDD renameAddingPrimes(const BDD& bdd, int numUnprimedBDDVars) {
+    int *permute = new int[numUnprimedBDDVars * 2];
+    for (int i = 0; i < numUnprimedBDDVars; i++) {
+        permute[i] = i + numUnprimedBDDVars;
+        permute[i + numUnprimedBDDVars] = i + numUnprimedBDDVars;
     }
 
     BDD r = bdd.Permute(permute);
@@ -145,44 +148,35 @@ BDD renameAddingPrimes(const BDD& bdd, int numVars) {
     return r;
 }
 
-BDD immediatePredecessorStates(const Cudd& manager, const BDD& transitionBdd, const BDD& valuesBdd, int numVars) {
-    BDD bdd = renameAddingPrimes(valuesBdd, numVars);
-    bdd = transitionBdd * valuesBdd;
-    bdd = bdd.ExistAbstract(primeVariables(manager, numVars));
+BDD immediatePredecessorStates(const Cudd& manager, const BDD& transitionBdd, const BDD& valuesBdd, int numUnprimedBDDVars) {
+    BDD bdd = renameAddingPrimes(valuesBdd, numUnprimedBDDVars);
+    bdd = transitionBdd * bdd;
+    bdd = bdd.ExistAbstract(primeVariables(manager, numUnprimedBDDVars));
     return bdd;
 }
 
-BDD backwardReachableStates(const Cudd& manager, const BDD& transitionBdd, const BDD& valuesBdd, int numVars) {
+BDD backwardReachableStates(const Cudd& manager, const BDD& transitionBdd, const BDD& valuesBdd, int numUnprimedBDDVars) {
     BDD reachable = manager.bddZero();
     BDD frontier = valuesBdd;
 
     while (frontier != manager.bddZero()) {
-        frontier = immediatePredecessorStates(manager, transitionBdd, frontier, numVars) * !reachable;
+        frontier = immediatePredecessorStates(manager, transitionBdd, frontier, numUnprimedBDDVars) * !reachable;
         reachable = reachable + frontier;
     }
     return reachable;
 }
 
-BDD randomState(const Cudd& manager, const BDD& S, int numVars) {
-    char *out = new char[numVars * 2];
-    S.PickOneCube(out);
-
-    std::vector<bool> values;
-    for (int i = 0; i < numVars; i++) {
-        if (out[i] == 0) { // careful with = vs == in c++
-            values.push_back(false);
-        }
-        else {
-            values.push_back(true); // ideally, on 2 you would choose randomly between 0 and 1. may not matter
-        }
+BDD randomState(const Cudd& manager, const BDD& S, int numUnprimedBDDVars) {
+    std::vector<BDD> vars;
+    for (int i = 0; i < numUnprimedBDDVars; i++) {
+        vars.push_back(manager.bddVar(i));
     }
 
-    delete[] out;
-    return representState(manager, values);
+    return S.PickOneMinterm(vars);
 }
 
-std::vector<BDD> attractors(const Cudd&  manager, const BDD& transitionBdd, int numVars) {
-    std::vector<BDD> attractors = std::vector<BDD>();
+std::list<BDD> attractorsBN(const Cudd&  manager, const BDD& transitionBdd, int numVars) {
+    std::list<BDD> attractors;
     BDD S = manager.bddOne();
     while (S != manager.bddZero()) {
         BDD s = randomState(manager, S, numVars);
@@ -222,7 +216,7 @@ int main() {
     std::cout << statespace.CountMinterm(cmpInitial.size());
     std::cout << "\n";
 
-    std::vector<BDD> attsA = attractors(manager, transitionBddA, cmpInitial.size());
+    std::list<BDD> attsA = attractorsBN(manager, transitionBddA, cmpInitial.size());
     for (BDD attractor : attsA) {
         attractor.PrintMinterm();
         std::cout << "\n";
@@ -231,7 +225,7 @@ int main() {
     std::cout << "--------------------------------\n";
 
     BDD transitionBddS = representSyncTransitionRelation(manager, cmp);
-    std::vector<BDD> attsS = attractors(manager, transitionBddS, cmpInitial.size());
+    std::list<BDD> attsS = attractorsBN(manager, transitionBddS, cmpInitial.size());
     for (BDD attractor : attsS) {
         attractor.PrintMinterm();
         std::cout << "\n";
