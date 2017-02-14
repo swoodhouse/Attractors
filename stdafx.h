@@ -6,12 +6,15 @@
 #pragma once
 
 #include "targetver.h"
-#include <tchar.h>
+
+#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+// Windows Header Files:
+#include <windows.h>
+
+
+
 #include "cuddObj.h"
-#include <iostream>
-#include <tuple>
 #include <vector>
-
-
-
-// TODO: reference additional headers your program requires here
+#include <list>
+#include <numeric>
+#include <iostream>
