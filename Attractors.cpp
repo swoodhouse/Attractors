@@ -192,44 +192,105 @@ std::list<BDD> attractorsBN(const Cudd&  manager, const BDD& transitionBdd, int 
     return attractors;
 }
 
-int main() {
-    //Cebpa, Pu.1, Gata2, Gata1, Fog1, EKLF, Fli1, Scl, cJun, EgrNab, Gfi1
-    std::vector<bool> cmpInitial{ true, true, true, false, false, false, false, false, false, false, false };
-    std::vector<std::vector<int>> cebpa{ { 0 },{ -7 },{ -3, -4 } };
-    std::vector<std::vector<int>> pu1{ { 0, 1 },{ -2 },{ -3 } };
-    std::vector<std::vector<int>> gata2{ { 3 },{ -1 },{ -3, -4 } };
-    std::vector<std::vector<int>> gata1{ { 2, 3, 6 },{ -1 } };
-    std::vector<std::vector<int>> fog1{ { 3 } };
-    std::vector<std::vector<int>> eklf{ { 3 },{ -6 } };
-    std::vector<std::vector<int>> fli1{ { 3 },{ -5 } };
-    std::vector<std::vector<int>> scl{ { 3 },{ -1 } };
-    std::vector<std::vector<int>> cJun{ { 1 },{ -10 } };
-    std::vector<std::vector<int>> egrNab{ { 1 },{ 8 },{ -10 } };
-    std::vector<std::vector<int>> gfi1{ { 0 },{ -9 } };
-    std::vector<std::vector<std::vector<int>>> cmp{ cebpa, pu1, gata2, gata1, fog1, eklf, fli1, scl, cJun, egrNab, gfi1 };
+BDD representUnprimedVarQN(const Cudd& manager, int var, int val, const std::vector<int>& ranges) {
+    BDD bdd = manager.bddOne();
+    int i = std::accumulate(ranges.begin(), ranges.begin() + var, 0);
+    int max = ranges[var];
 
-    Cudd manager(0, 0);
-    BDD initialStateBdd = representState(manager, cmpInitial);
-
-    BDD transitionBddA = representAsyncTransitionRelation(manager, cmp);
-    BDD statespace = forwardReachableStates(manager, transitionBddA, initialStateBdd, cmpInitial.size());
-    std::cout << statespace.CountMinterm(cmpInitial.size());
-    std::cout << "\n";
-
-    std::list<BDD> attsA = attractorsBN(manager, transitionBddA, cmpInitial.size());
-    for (BDD attractor : attsA) {
-        attractor.PrintMinterm();
-        std::cout << "\n";
+    for (int j = 0; j < max; j++) {
+        BDD var = manager.bddVar(i);
+        if (val <= j) {
+            var = !var;
+        }
+        bdd = bdd * var;
+        i++;
     }
 
-    std::cout << "--------------------------------\n";
+    return bdd;
+}
 
-    BDD transitionBddS = representSyncTransitionRelation(manager, cmp);
-    std::list<BDD> attsS = attractorsBN(manager, transitionBddS, cmpInitial.size());
-    for (BDD attractor : attsS) {
-        attractor.PrintMinterm();
-        std::cout << "\n";
+BDD representStateQN(const Cudd& manager, const std::vector<int>& vars, const std::vector<int>& values, const std::vector<int>& ranges) {
+    BDD bdd = manager.bddOne();
+    for (size_t i = 0; i < vars.size(); i++) {
+        int var = vars[i];
+        int val = values[i];
+        bdd = bdd * representUnprimedVarQN(manager, var, val, ranges);
     }
+    return bdd;
+}
 
-    return 0;
+BDD representPrimedVarQN(const Cudd& manager, int var, int val, const std::vector<int>& ranges) {
+    BDD bdd = manager.bddOne();
+    int i = std::accumulate(ranges.begin(), ranges.end(), 0) + std::accumulate(ranges.begin(), ranges.begin() + var, 0);
+    int max = ranges[var];
+
+    for (int j = 0; j < max; j++) {
+        BDD var = manager.bddVar(i);
+        if (val <= j) {
+            var = !var;
+        }
+        bdd = bdd * var;
+        i++;
+    }
+    return bdd;
+}
+
+BDD removeInvalidBitCombinations(const Cudd& manager, const BDD& S, const std::vector<int>& ranges) {
+    BDD bdd = S;
+    int i = 0;
+    for (int max : ranges) {
+        for (int j = 1; j < max; j++) {
+            BDD a = manager.bddVar(i);
+            BDD b = manager.bddVar(i + 1);
+            bdd = bdd * implication(b, a);
+            i++;
+        }
+        i++;
+    }
+    return bdd;
+}
+
+BDD representSyncQNTransitionRelation(const Cudd& manager, const std::vector<int>& ranges, const std::vector<std::vector<int>>& inputVars,
+    const std::vector<std::vector<std::vector<int>>>& inputValues, const std::vector<std::vector<int>>& outputValues) {
+    BDD bdd = manager.bddOne();
+    int v = 0;
+    auto itVars = std::begin(inputVars);
+    auto itIn = std::begin(inputValues);
+    auto itOut = std::begin(outputValues);
+    while (itOut != std::end(outputValues)) {
+        auto itVals = std::begin(*itIn);
+        auto itO = std::begin(*itOut);
+        while (itO != std::end(*itOut)) {
+            BDD state = representStateQN(manager, *itVars, *itVals, ranges);
+            BDD vPrime = representPrimedVarQN(manager, v, *itO, ranges);
+            bdd = bdd * implication(state, vPrime);;
+            ++itVals;
+            ++itO;
+        }
+        v++;
+        ++itVars;
+        ++itIn;
+        ++itOut;
+    }
+    return bdd;
+}
+
+std::list<BDD> attractorsQN(const Cudd& manager, const BDD& transitionBdd, const std::vector<int>& ranges) {
+    int numUnprimedBDDVars = std::accumulate(ranges.begin(), ranges.end(), 0);
+    std::list<BDD> attractors;
+    BDD S = manager.bddOne();
+    S = removeInvalidBitCombinations(manager, S, ranges);
+
+    while (S != manager.bddZero()) {
+        BDD s = randomState(manager, S, numUnprimedBDDVars);
+        BDD fr = forwardReachableStates(manager, transitionBdd, s, numUnprimedBDDVars);
+        BDD br = backwardReachableStates(manager, transitionBdd, s, numUnprimedBDDVars);
+
+        if ((fr * !br) == manager.bddZero()) {
+            attractors.push_back(fr);
+        }
+
+        S = S * !(s + br);
+    }
+    return attractors;
 }
