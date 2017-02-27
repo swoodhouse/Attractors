@@ -263,7 +263,7 @@ BDD representSyncQNTransitionRelation(const Cudd& manager, const std::vector<int
         while (itO != std::end(*itOut)) {
             BDD state = representStateQN(manager, *itVars, *itVals, ranges);
             BDD vPrime = representPrimedVarQN(manager, v, *itO, ranges);
-            bdd = bdd * implication(state, vPrime);;
+            bdd = bdd * implication(state, vPrime);
             ++itVals;
             ++itO;
         }
