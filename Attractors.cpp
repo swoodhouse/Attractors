@@ -277,25 +277,24 @@ BDD representSyncQNTransitionRelation(const Cudd& manager, const std::vector<int
 	const std::vector<std::vector<std::vector<int>>>& inputValues, const std::vector<std::vector<int>>& outputValues) {
 	BDD bdd = manager.bddOne();
 	int v = 0;
-	auto itVars = std::begin(inputVars);
-	auto itIn = std::begin(inputValues);
-	auto itOut = std::begin(outputValues);
 
-	while (itOut != std::end(outputValues)) {
-		auto itVals = std::begin(*itIn);
-		auto itO = std::begin(*itOut);
-		while (itO != std::end(*itOut)) {
-			BDD state = representStateQN(manager, *itVars, *itVals, ranges);
-			BDD vPrime = representPrimedVarQN(manager, v, *itO, ranges);
-			BDD i = implication(state, vPrime);
-			bdd = bdd * i;
-			++itVals;
-			++itO;
+	for (int v = 0; v < ranges.size(); v++) {
+		if (ranges[v] > 0) {
+			auto iVars = inputVars[v];
+			auto iValues = inputValues[v];
+			auto oValues = outputValues[v];
+
+			std::vector<BDD> states(ranges[v] + 1, manager.bddZero());
+			for (int i = 0; i < oValues.size(); i++) {
+				states[oValues[i]] = states[oValues[i]] + representStateQN(manager, iVars, iValues[i], ranges);
+				manager.ReduceHeap(CUDD_REORDER_SIFT, 0);
+			}
+			for (int val = 0; val <= ranges[v]; val++) {
+				BDD vPrime = representPrimedVarQN(manager, v, val, ranges);
+				bdd = bdd * logicalEquivalence(states[val], vPrime);
+				manager.ReduceHeap(CUDD_REORDER_SIFT, 0);
+			}
 		}
-		v++;
-		++itVars;
-		++itIn;
-		++itOut;
 	}
 	return bdd;
 }
