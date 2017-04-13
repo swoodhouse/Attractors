@@ -1,5 +1,3 @@
-// TODO: add defensive size checks, refactor, optimise
-
 #include "stdafx.h"
 
 BDD representState(const Cudd& manager, const std::vector<bool>& values) {
@@ -219,7 +217,7 @@ BDD representUnprimedVarQN(const Cudd& manager, int var, int val, const std::vec
 	auto lambda = [](int a, int b) { return a + bits(b); };
 	int i = std::accumulate(ranges.begin(), ranges.begin() + var, 0, lambda);
 
-	int b = bits(ranges[var]); //1.. be careful with zero max/=  just add an if?
+	int b = bits(ranges[var]);
 	for (int n = 0; n < b; n++) {
 		BDD var = manager.bddVar(i);
 		if (!nthBitSet(val, n)) {
@@ -237,7 +235,7 @@ BDD representPrimedVarQN(const Cudd& manager, int var, int val, const std::vecto
 	auto lambda = [](int a, int b) { return a + bits(b); };
 	int i = std::accumulate(ranges.begin(), ranges.end(), 0, lambda) + std::accumulate(ranges.begin(), ranges.begin() + var, 0, lambda);
 
-	int b = bits(ranges[var]); //1.. be careful with zero max/=  just add an if?
+	int b = bits(ranges[var]);
 	for (int n = 0; n < b; n++) {
 		BDD var = manager.bddVar(i);
 		if (!nthBitSet(val, n)) {
@@ -255,7 +253,7 @@ BDD representStateQN(const Cudd& manager, const std::vector<int>& vars, const st
 	for (/*std::vector<int>::size_type*/ size_t i = 0; i < vars.size(); i++) {
 		int var = vars[i];
 		int val = values[i];
-		bdd = bdd * representUnprimedVarQN(manager, var, val, ranges); // inefficent, because we do the find beginning loop many times
+		bdd = bdd * representUnprimedVarQN(manager, var, val, ranges);
 	}
 	return bdd;
 }
@@ -265,10 +263,10 @@ BDD removeInvalidBitCombinations(const Cudd& manager, const BDD& S, const std::v
 	for (int var = 0; var < ranges.size(); var++) {
 		if (ranges[var] > 0) {
 			int b = bits(ranges[var]);
-			int theoreticalMax = (1 << b) - 1; //this...
+			int theoreticalMax = (1 << b) - 1;
 
-			for (int val = ranges[var] + 1; val <= theoreticalMax; val++) { //this... // <= or <?
-				bdd = bdd * !representUnprimedVarQN(manager, var, val, ranges); // only have to do unprimed, right?
+			for (int val = ranges[var] + 1; val <= theoreticalMax; val++) {
+				bdd = bdd * !representUnprimedVarQN(manager, var, val, ranges);
 			}
 		}
 	}
@@ -309,22 +307,20 @@ std::list<BDD> attractorsQN(Cudd manager, const BDD& transitionBdd, const std::v
 	BDD S = manager.bddOne();
 	S = removeInvalidBitCombinations(manager, S, ranges);
 
-	manager.ReduceHeap(CUDD_REORDER_SIFT, 0); // maybe?
+	manager.ReduceHeap(CUDD_REORDER_SIFT, 0);
 
 	while (S != manager.bddZero()) {
-		BDD s = randomState(manager, S, numUnprimedBDDVars); //here... pick a state.run it.pick a state.run it.stop after n steps, or something.
+		BDD s = randomState(manager, S, numUnprimedBDDVars);
 
 		for (int i = 0; i < 20; i++) {
 			BDD sP = forwardReachableStates(manager, transitionBdd, s, numUnprimedBDDVars);
-			s = randomState(manager, sP, numUnprimedBDDVars); //here... pick a state.run it.pick a state.run it.stop after n steps, or something.
+			s = randomState(manager, sP, numUnprimedBDDVars);
 		}
 
-		BDD fr = forwardReachableStates(manager, transitionBdd, s, numUnprimedBDDVars); // pass vars here too instead of num
-		//std::cout << "3" << std::endl;
+		BDD fr = forwardReachableStates(manager, transitionBdd, s, numUnprimedBDDVars);
 		BDD br = backwardReachableStates(manager, transitionBdd, s, numUnprimedBDDVars);
 
-		if ((fr * !br) == manager.bddZero()) { // check if its backward set contains its forward set
-			std::cout << "Attractor found" << std::endl;
+		if ((fr * !br) == manager.bddZero()) {
 			attractors.push_back(fr);
 		}
 
@@ -340,7 +336,7 @@ BDD varDoesChangeQN(const Cudd& manager, int var, const std::vector<int>& ranges
 	int numBits = bits(ranges[var]);
 
 	BDD bdd = manager.bddZero();
-	for (int i = start; i < start + numBits; i++) { // right??
+	for (int i = start; i < start + numBits; i++) {
 		BDD v = manager.bddVar(i);
 		BDD vPrime = manager.bddVar(i + numUnprimedBDDVars);
 		bdd = bdd + !logicalEquivalence(v, vPrime);
@@ -370,14 +366,14 @@ BDD representAsyncQNTransitionRelation(/*const*/ Cudd& manager, const std::vecto
 		BDD vPrime = manager.bddVar(numUnprimedBDDVars + i);
 		fixpoint = fixpoint * logicalEquivalence(v, vPrime);
 
-		manager.ReduceHeap(CUDD_REORDER_SIFT, 0); // maybe? // here??
+		manager.ReduceHeap(CUDD_REORDER_SIFT, 0);
 	}
 
 	BDD bdd = manager.bddZero();
 	int v = 0;
 
 	for (int v = 0; v < ranges.size(); v++) {
-		if (ranges[v] > 0) { // ??????
+		if (ranges[v] > 0) {
 			auto iVars = inputVars[v];
 			auto iValues = inputValues[v];
 			auto oValues = outputValues[v];
@@ -386,14 +382,14 @@ BDD representAsyncQNTransitionRelation(/*const*/ Cudd& manager, const std::vecto
 
 			for (int i = 0; i < oValues.size(); i++) {
 				states[oValues[i]] = states[oValues[i]] + representStateQN(manager, iVars, iValues[i], ranges);
-				manager.ReduceHeap(CUDD_REORDER_SIFT, 0); // maybe? // here?
+				manager.ReduceHeap(CUDD_REORDER_SIFT, 0);
 			}
 			BDD updates = manager.bddOne();
 			for (int val = 0; val <= ranges[v]; val++) {
 				BDD vPrime = representPrimedVarQN(manager, v, val, ranges);
 				BDD u = logicalEquivalence(states[val], vPrime);
 				updates = updates * u;
-				manager.ReduceHeap(CUDD_REORDER_SIFT, 0); // maybe? // here?
+				manager.ReduceHeap(CUDD_REORDER_SIFT, 0);
 			}
 			BDD otherVarsDoNotChange = otherVarsDoNotChangeQN(manager, v, ranges);
 			BDD vChanges = varDoesChangeQN(manager, v, ranges);
