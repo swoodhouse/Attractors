@@ -12,9 +12,10 @@
 #include <windows.h>
 
 
-
 #include "cuddObj.h"
 #include <vector>
 #include <list>
 #include <numeric>
+#include <algorithm>
 #include <iostream>
+#include <fstream>
