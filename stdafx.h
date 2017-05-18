@@ -12,10 +12,11 @@
 #include <windows.h>
 
 
-#include "cuddObj.h"
+#include "cuddObj.hh"
 #include <vector>
 #include <list>
 #include <numeric>
 #include <algorithm>
-#include <iostream>
+#include <iostream> // which of these do i need?
+#include <ostream>
 #include <fstream>
