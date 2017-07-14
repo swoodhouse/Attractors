@@ -1,2 +1,2 @@
 # Attractors
-Compute attractors of Qualitative networks using binary decision diagrams.
+Compute attractors of Qualitative Networks using binary decision diagrams.
