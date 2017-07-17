@@ -1,7 +1,5 @@
 #pragma once
 
-int bits(unsigned int i);
-
 struct QNTable {
     std::vector<std::vector<int>> inputVars;
     std::vector<std::vector<std::vector<int>>> inputValues;
@@ -25,7 +23,7 @@ class Attractors {
     BDD representState(const std::vector<bool>& values) const;
     BDD representNonPrimeVariables() const;
     BDD representPrimeVariables() const;
-    int countBits(int var) const;
+    int countBits(int start) const;
     BDD representUnprimedVarQN(int var, int val) const;
     BDD representPrimedVarQN(int var, int val) const;
     BDD representStateQN(const std::vector<int>& vars, const std::vector<int>& values) const;
@@ -49,7 +47,7 @@ class Attractors {
   public:
     Attractors(std::vector<int>&& minVals, std::vector<int>&& rangesV, QNTable&& qnT) :
         minValues(std::move(minVals)), ranges(std::move(rangesV)), qn(std::move(qnT)),
-        numUnprimedBDDVars(std::accumulate(ranges.begin(), ranges.end(), 0, [](int a, int b) { return a + bits(b); })),
+        numUnprimedBDDVars(countBits(0)),
         manager(numUnprimedBDDVars * 2),
         nonPrimeVariables(representNonPrimeVariables()), primeVariables(representPrimeVariables())
     {
