@@ -408,8 +408,10 @@ int Attractors::run(Mode mode, const std::string& outputFile, const std::string&
         file << prettyPrint(fix) << std::endl;
     }
 
+    //need to do backward reachable..
     std::cout << "Finding loop attractors..." << std::endl;
-    std::list<BDD> syncLoops = attractors(syncTransitionBdd, fix);
+    BDD br = fix + backwardReachableStates(syncTransitionBdd, fix);
+    std::list<BDD> syncLoops = attractors(syncTransitionBdd, br);
 
     if (mode == Mode::SYNC) {
         int i = 0;
