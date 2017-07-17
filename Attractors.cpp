@@ -435,7 +435,7 @@ int Attractors::run(Mode mode, const std::string& outputFile, const std::string&
             }
         }
 
-        BDD br = syncAsyncAttractors += backwardReachableStates(asyncTransitionBdd, syncAsyncAttractors);
+        BDD br = syncAsyncAttractors + backwardReachableStates(asyncTransitionBdd, syncAsyncAttractors);
         asyncLoops.splice(asyncLoops.end(), attractors(asyncTransitionBdd, br));
 
         int i = 0;
