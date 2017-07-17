@@ -17,6 +17,5 @@
 #include <list>
 #include <numeric>
 #include <algorithm>
-#include <iostream> // which of these do i need?
-#include <ostream>
+#include <iostream>
 #include <fstream>
