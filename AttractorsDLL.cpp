@@ -1,8 +1,8 @@
 ﻿#include "stdafx.h"
 #include "Attractors.h"
 
-extern "C" __declspec(dllexport) int attractors(int numVars, int ranges[], int minValues[], int numInputs[], int inputVars[], int numUpdates[], int inputValues[], int outputValues[],
-    const char *output, int outputLength, const char *csvHeader, int headerLength, int mode) {
+extern "C" __declspec(dllexport) int attractors(int numVars, int ranges[], int minValues[], int numInputs[], int inputVars[], int numUpdates[],
+    int inputValues[], int outputValues[], const char *output, int outputLength, const char *csvHeader, int headerLength, int mode) {
     std::string outputFile(output, outputLength);
     std::string header(csvHeader, headerLength);
     std::vector<int> rangesV(ranges, ranges + numVars);

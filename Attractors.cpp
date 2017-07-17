@@ -7,11 +7,11 @@ int logTwo(unsigned int i) {
     return r;
 }
 
-int bits(unsigned int i) {
+inline int bits(unsigned int i) {
     return i == 0 ? 0 : logTwo(i) + 1;
 }
 
-bool nthBitSet(int i, int n) {
+inline bool nthBitSet(int i, int n) {
     return (1 << n) & i;
 }
 
