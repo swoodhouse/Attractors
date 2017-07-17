@@ -23,7 +23,7 @@ class Attractors {
     BDD representState(const std::vector<bool>& values) const;
     BDD representNonPrimeVariables() const;
     BDD representPrimeVariables() const;
-    int countBits(int start) const;
+    int countBits(int end) const;
     BDD representUnprimedVarQN(int var, int val) const;
     BDD representPrimedVarQN(int var, int val) const;
     BDD representStateQN(const std::vector<int>& vars, const std::vector<int>& values) const;
@@ -47,7 +47,7 @@ class Attractors {
   public:
     Attractors(std::vector<int>&& minVals, std::vector<int>&& rangesV, QNTable&& qnT) :
         minValues(std::move(minVals)), ranges(std::move(rangesV)), qn(std::move(qnT)),
-        numUnprimedBDDVars(countBits(0)),
+        numUnprimedBDDVars(countBits(minValues.size())),
         manager(numUnprimedBDDVars * 2),
         nonPrimeVariables(representNonPrimeVariables()), primeVariables(representPrimeVariables())
     {

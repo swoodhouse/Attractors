@@ -72,9 +72,9 @@ BDD Attractors::representPrimeVariables() const {
 }
 
 // inefficent to repeatedly calculate this
-int Attractors::countBits(int start) const {
+int Attractors::countBits(int end) const {
     auto lambda = [](int a, int b) { return a + bits(b); };
-    return std::accumulate(ranges.begin(), ranges.begin() + start, 0, lambda);
+    return std::accumulate(ranges.begin(), ranges.begin() + end, 0, lambda);
 }
 
 BDD Attractors::representUnprimedVarQN(int var, int val) const {
