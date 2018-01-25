@@ -9,8 +9,6 @@ struct QNTable {
         inputVars(std::move(inputVarsV)), inputValues(std::move(inputValuesV)), outputValues(std::move(outputValuesV)) {}
 };
 
-enum class Mode { SYNC, ASYNC };
-
 class Attractors {
     const std::vector<int> minValues;
     const std::vector<int> ranges;
@@ -44,7 +42,7 @@ class Attractors {
     bool isAsyncLoop(const BDD& S, const BDD& syncTransitionBdd) const;
     std::string prettyPrint(const BDD& attractor) const;
 
-  public:
+public:
     Attractors(std::vector<int>&& minVals, std::vector<int>&& rangesV, QNTable&& qnT) :
         minValues(std::move(minVals)), ranges(std::move(rangesV)), qn(std::move(qnT)),
         numUnprimedBDDVars(countBits(minValues.size())),
@@ -54,5 +52,8 @@ class Attractors {
         manager.AutodynEnable(CUDD_REORDER_GROUP_SIFT); // seems to beat CUDD_REORDER_SIFT
     };
 
-    int run(Mode mode, const std::string& outputFile, const std::string& header) const;
+    BDD Attractors::readStatesFromCsv(const std::string& filename) const;
+
+    int runSync(const BDD& initialStates, const std::string& outputFile, const std::string& header) const;
+    int runAsync(const BDD& initialStates, const std::string& outputFile, const std::string& header) const;
 };
