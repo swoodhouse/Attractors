@@ -323,8 +323,7 @@ std::list<BDD> Attractors::attractors(const BDD& transitionBdd, const BDD& state
     while (!S.IsZero()) {
         BDD s = randomState(S);
 
-        //for (int i = 0; i < 20; i++) {
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < ranges.size(); i++) { // unrolling by ranges.size() may not be the perfect choice of number
             BDD sP = immediateSuccessorStates(transitionBdd, s);
             s = randomState(sP);
         }
