@@ -160,7 +160,6 @@ BDD Attractors::otherVarsDoNotChangeQN(int var) const {
 
 BDD Attractors::representSyncQNTransitionRelation() const {
     BDD bdd = manager.bddOne();
-    int v = 0;
 
     for (int v = 0; v < ranges.size(); v++) {
         if (ranges[v] > 0) {
@@ -190,7 +189,6 @@ BDD Attractors::representAsyncQNTransitionRelation() const {
     }
 
     BDD bdd = manager.bddZero();
-    int v = 0;
 
     for (int v = 0; v < ranges.size(); v++) {
         if (ranges[v] > 0) {
