@@ -416,7 +416,9 @@ BDD Attractors::readStatesFromCsv(const std::string& filename) const {
         while (std::getline(iss, s, ',')) {
             std::vector<int> vals(parseRange(s));
             BDD bdd = manager.bddZero();
-            for (int val : vals) bdd += representUnprimedVarQN(var, val);
+            for (int val : vals) {
+                bdd += representUnprimedVarQN(var, val - minValues[var]); //representUnprimedVarQN(var, val);
+            }
             state *= bdd;
             var++;
         }
