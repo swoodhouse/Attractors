@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Research 2017
+// License: MIT. See LICENSE
+
 #pragma once
 
 struct QNTable {

@@ -1,8 +1,10 @@
+// Copyright (c) Microsoft Research 2017
+// License: MIT. See LICENSE
 
 #include "stdafx.h"
 #include "Attractors.h"
 
-int logTwo(unsigned int i) {
+inline int logTwo(unsigned int i) {
     unsigned int r = 0;
     while (i >>= 1) r++;
     return r;
@@ -84,8 +86,7 @@ BDD Attractors::representPrimeVariables() const {
     return bdd;
 }
 
-// inefficent to repeatedly calculate this
-int Attractors::countBits(int end) const {
+inline int Attractors::countBits(int end) const {
     auto lambda = [](int a, int b) { return a + bits(b); };
     return std::accumulate(ranges.begin(), ranges.begin() + end, 0, lambda);
 }
@@ -369,6 +370,7 @@ bool Attractors::isAsyncLoop(const BDD &S, const BDD& syncTransitionBdd) const {
 }
 
 std::string Attractors::prettyPrint(const BDD& attractor) const {
+    // ideally would not use a temp file
     FILE *old = manager.ReadStdout();
     FILE *fp = fopen("temp.txt", "w");
     manager.SetStdout(fp);
@@ -417,7 +419,7 @@ BDD Attractors::readStatesFromCsv(const std::string& filename) const {
             std::vector<int> vals(parseRange(s));
             BDD bdd = manager.bddZero();
             for (int val : vals) {
-                bdd += representUnprimedVarQN(var, val - minValues[var]); //representUnprimedVarQN(var, val);
+                bdd += representUnprimedVarQN(var, val - minValues[var]);
             }
             state *= bdd;
             var++;
@@ -463,7 +465,6 @@ int Attractors::runSync(const BDD& initialStates, const std::string& outputFile,
     return 0;
 }
 
-// refactor
 int Attractors::runAsync(const BDD& initialStates, const std::string& outputFile, const std::string& header) const {
     std::cout << "Building synchronous transition relation..." << std::endl;
     BDD syncTransitionBdd = representSyncQNTransitionRelation();

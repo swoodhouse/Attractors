@@ -1,4 +1,7 @@
-﻿#include "stdafx.h"
+﻿// Copyright (c) Microsoft Research 2017
+// License: MIT. See LICENSE
+
+#include "stdafx.h"
 #include "Attractors.h"
 
 extern "C" __declspec(dllexport) int attractors(int numVars, int ranges[], int minValues[], int numInputs[], int inputVars[], int numUpdates[],
